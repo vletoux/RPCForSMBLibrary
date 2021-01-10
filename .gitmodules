@@ -1,0 +1,3 @@
+[submodule "SMBLibrary"]
+	path = SMBLibrary
+	url = https://github.com/vletoux/SMBLibrary.git

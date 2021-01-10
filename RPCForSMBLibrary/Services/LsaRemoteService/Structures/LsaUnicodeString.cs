@@ -1,0 +1,71 @@
+﻿/* Copyright (C) 2021 Vincent LE TOUX <vincent.letoux@gmail.com>. All rights reserved.
+ * 
+ * You can redistribute this program and/or modify it under the terms of
+ * the GNU Lesser Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ */
+using System;
+using System.Collections.Generic;
+using SMBLibrary.RPC;
+using Utilities;
+
+namespace SMBLibrary.Services
+{
+    public class LsaUnicodeString : INDRStructure
+    {
+
+        NDRUnicodeString buffer;
+        uint lenght;
+        uint size;
+
+        public LsaUnicodeString()
+        {
+            buffer = new NDRUnicodeString(string.Empty, true);
+        }
+
+        public LsaUnicodeString(string value)
+        {
+            buffer = new NDRUnicodeString(value, true);
+        }
+
+        public LsaUnicodeString(NDRParser parser) : this()
+        {
+            Read(parser);
+        }
+
+        public string Value
+        {
+            get
+            {
+                if (lenght == 0)
+                    return string.Empty;
+                return buffer.Value;
+            }
+            set
+            {
+                buffer.Value = value;
+            }
+        }
+
+        public void Read(NDRParser parser)
+        {
+            lenght = parser.ReadUInt16();
+            size = parser.ReadUInt16();
+            parser.ReadEmbeddedStructureFullPointer(ref buffer);
+        }
+
+        public void Write(NDRWriter writer)
+        {
+            ushort length = 0;
+            if (buffer.Value != null)
+            {
+                length = (ushort)buffer.Value.Length;
+            }
+
+            writer.WriteUInt16((ushort)(length * 2));
+            writer.WriteUInt16((ushort)((length+1)*2));
+            
+            writer.WriteEmbeddedStructureFullPointer(buffer);
+        }
+    }
+}

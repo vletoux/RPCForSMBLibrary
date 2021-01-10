@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net20;net40;netstandard2.0</TargetFrameworks>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>RPCForSMBLibrary</AssemblyName>
+    <Version>1.0.0</Version>
+    <NoWarn>1573;1591</NoWarn>
+    <RootNamespace>SMBLibrary</RootNamespace>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Authors>Vincent LE TOUX</Authors>
+    <PackageDescription>RPCForSMBLibrary is an open-source C# SMB 1.0/CIFS, SMB 2.0, SMB 2.1 and SMB 3.0 server and client implementation</PackageDescription>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/vletoux/RPCForSMBLibrary</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/vletoux/RPCForSMBLibrary</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SMBLibrary\SMBLibrary\SMBLibrary.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <Target Name="ILRepack" Condition="'$(Configuration)' == 'Release'" AfterTargets="AfterBuild">
+    <Exec Command="&quot;$(ProgramW6432)\ILRepack\ILRepack.exe&quot; /out=&quot;$(OutputPath)\RPCForSMBLibrary.dll&quot; &quot;$(OutputPath)\RPCForSMBLibrary.dll&quot; &quot;$(OutputPath)\SMBLibrary.dll&quot; &quot;$(OutputPath)\Utilities.dll&quot;"></Exec>
+  </Target>
+
+</Project>
