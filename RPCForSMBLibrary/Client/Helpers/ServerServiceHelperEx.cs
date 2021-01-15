@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using SMBLibrary.Client.Helpers;
 using SMBLibrary.RPC;
 using SMBLibrary.Services;
 using Utilities;
@@ -18,79 +19,52 @@ namespace SMBLibrary.Client
 
         public static DateTime NetrRemoteTOD(ISMBClient client, string ServerName, out NTStatus status)
         {
-            object pipeHandle;
-
-            ISMBFileStore namedPipeShare = client.TreeConnect("IPC$", out status);
-            if (namedPipeShare == null)
+            using (RPCCallHelper rpc = new RPCCallHelper(client, ServerService.ServicePipeName, ServerService.ServiceInterfaceGuid, ServerService.ServiceVersion))
             {
-                return DateTime.MinValue;
+                status = rpc.BindPipe();
+                if (status != NTStatus.STATUS_SUCCESS)
+                    return DateTime.MinValue;
+
+                NetrRemoteTODRequest netrRemoteTODRequest = new NetrRemoteTODRequest();
+                netrRemoteTODRequest.ServerName = ServerName;
+
+                NetrRemoteTODResponse netrRemoteTODResponse;
+
+                status = rpc.ExecuteCall((ushort)ServerServiceOpName.NetrRemoteTOD, netrRemoteTODRequest, out netrRemoteTODResponse);
+                if (status != NTStatus.STATUS_SUCCESS)
+                {
+                    return DateTime.MinValue;
+                }
+                
+                return netrRemoteTODResponse.TimeOfDayInfo.ToDateTime();
             }
-            status = RPCClientHelper.Bind(namedPipeShare, ServerService.ServicePipeName, ServerService.ServiceInterfaceGuid, ServerService.ServiceVersion, out pipeHandle);
-            if (status != NTStatus.STATUS_SUCCESS)
-            {
-                namedPipeShare.CloseFile(pipeHandle);
-                namedPipeShare.Disconnect();
-                return DateTime.MinValue;
-            }
-
-
-            NetrRemoteTODRequest netrRemoteTODRequest = new NetrRemoteTODRequest();
-            netrRemoteTODRequest.ServerName = ServerName;
-            
-            NetrRemoteTODResponse netrRemoteTODResponse;
-
-            status = RPCClientHelper.ExecuteCall(namedPipeShare, pipeHandle, (ushort)ServerServiceOpName.NetrRemoteTOD, netrRemoteTODRequest, out netrRemoteTODResponse);
-            if (status != NTStatus.STATUS_SUCCESS)
-            {
-                namedPipeShare.CloseFile(pipeHandle);
-                namedPipeShare.Disconnect();
-                return DateTime.MinValue;
-            }
-            namedPipeShare.CloseFile(pipeHandle);
-            namedPipeShare.Disconnect();
-
-            return netrRemoteTODResponse.TimeOfDayInfo.ToDateTime();
         }
 
         public static NetrServerStatisticsGetResponse NetrServerStatisticsGet(ISMBClient client, string serverName, string service, uint level, uint options, out NTStatus status)
         {
-            object pipeHandle;
-
-            ISMBFileStore namedPipeShare = client.TreeConnect("IPC$", out status);
-            if (namedPipeShare == null)
+            using (RPCCallHelper rpc = new RPCCallHelper(client, ServerService.ServicePipeName, ServerService.ServiceInterfaceGuid, ServerService.ServiceVersion))
             {
-                return null;
+                status = rpc.BindPipe();
+                if (status != NTStatus.STATUS_SUCCESS)
+                    return null;
+
+                NetrServerStatisticsGetRequest netrServerStatisticsGetRequest = new NetrServerStatisticsGetRequest();
+                netrServerStatisticsGetRequest.ServerName = serverName;
+                netrServerStatisticsGetRequest.Service = service;
+                netrServerStatisticsGetRequest.Level = level;
+                netrServerStatisticsGetRequest.Options = options;
+
+                NetrServerStatisticsGetResponse netrServerStatisticsGetResponse;
+
+                status = rpc.ExecuteCall((ushort)ServerServiceOpName.NetrServerStatisticsGet, netrServerStatisticsGetRequest, out netrServerStatisticsGetResponse);
+                if (status != NTStatus.STATUS_SUCCESS)
+                {
+                    return null;
+                }
+
+                return netrServerStatisticsGetResponse;
             }
-            status = RPCClientHelper.Bind(namedPipeShare, ServerService.ServicePipeName, ServerService.ServiceInterfaceGuid, ServerService.ServiceVersion, out pipeHandle);
-            if (status != NTStatus.STATUS_SUCCESS)
-            {
-                namedPipeShare.CloseFile(pipeHandle);
-                namedPipeShare.Disconnect();
-                return null;
-            }
-
-
-            NetrServerStatisticsGetRequest netrServerStatisticsGetRequest = new NetrServerStatisticsGetRequest();
-            netrServerStatisticsGetRequest.ServerName = serverName;
-            netrServerStatisticsGetRequest.Service = service;
-            netrServerStatisticsGetRequest.Level = level;
-            netrServerStatisticsGetRequest.Options = options;
-
-            NetrServerStatisticsGetResponse netrServerStatisticsGetResponse;
-
-            status = RPCClientHelper.ExecuteCall(namedPipeShare, pipeHandle, (ushort)ServerServiceOpName.NetrServerStatisticsGet, netrServerStatisticsGetRequest, out netrServerStatisticsGetResponse);
-            if (status != NTStatus.STATUS_SUCCESS)
-            {
-                namedPipeShare.CloseFile(pipeHandle);
-                namedPipeShare.Disconnect();
-                return null;
-            }
-            namedPipeShare.CloseFile(pipeHandle);
-            namedPipeShare.Disconnect();
-
-            return netrServerStatisticsGetResponse;
         }
-
     }
 }
 

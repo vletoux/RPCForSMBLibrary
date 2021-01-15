@@ -1,3 +1,5 @@
 [submodule "SMBLibrary"]
 	path = SMBLibrary
-	url = https://github.com/vletoux/SMBLibrary.git
+	url = https://github.com/TalAloni/SMBLibrary.git
+[submodule "Submod"]
+	url = https://github.com/TalAloni/SMBLibrary.git

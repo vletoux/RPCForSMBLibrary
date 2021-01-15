@@ -20,12 +20,12 @@ namespace SMBLibrary.Services
 
         public LsaUnicodeString()
         {
-            buffer = new NDRUnicodeString(string.Empty, true);
+            buffer = new NDRUnicodeString(string.Empty, false);
         }
 
         public LsaUnicodeString(string value)
         {
-            buffer = new NDRUnicodeString(value, true);
+            buffer = new NDRUnicodeString(value, false);
         }
 
         public LsaUnicodeString(NDRParser parser) : this()
@@ -37,8 +37,6 @@ namespace SMBLibrary.Services
         {
             get
             {
-                if (lenght == 0)
-                    return string.Empty;
                 return buffer.Value;
             }
             set
@@ -63,7 +61,7 @@ namespace SMBLibrary.Services
             }
 
             writer.WriteUInt16((ushort)(length * 2));
-            writer.WriteUInt16((ushort)((length+1)*2));
+            writer.WriteUInt16((ushort)((length)*2));
             
             writer.WriteEmbeddedStructureFullPointer(buffer);
         }

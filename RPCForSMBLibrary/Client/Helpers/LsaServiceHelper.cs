@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using SMBLibrary.Client.Helpers;
 using SMBLibrary.RPC;
 using SMBLibrary.Services;
 using Utilities;
@@ -18,78 +19,69 @@ namespace SMBLibrary.Client
         public static List<string> ResolveSIDs(ISMBClient client, List<SID> sids, out NTStatus status)
         {
             List<string> output = null;
-            ISMBFileStore namedPipeShare = client.TreeConnect("IPC$", out status);
-            if (namedPipeShare == null)
+            using (RPCCallHelper rpc = new RPCCallHelper(client, LsaRemoteService.ServicePipeName, LsaRemoteService.ServiceInterfaceGuid, LsaRemoteService.ServiceVersion))
             {
-                return null;
-            }
-            object pipeHandle;
-            LsaHandle handle = LsaOpenPolicy(namedPipeShare, (AccessMask)0x801, out pipeHandle, out status);
-            if (handle != null)
-            {
+                status = rpc.BindPipe();
+                if (status != NTStatus.STATUS_SUCCESS)
+                    return null;
 
-                output = LsaLookupSids(namedPipeShare, pipeHandle, handle, sids, out status);
+                LsaHandle handle = LsaOpenPolicy(rpc, (AccessMask)0x801, out status);
+                if (handle != null)
+                {
 
-                LsaClose(namedPipeShare, pipeHandle, handle, out status);
+                    output = LsaLookupSids(rpc, handle, sids, out status);
+
+                    LsaClose(rpc, handle, out status);
+                }
             }
-            namedPipeShare.Disconnect();
             return output;
         }
 
         public static List<SID> ResolveNames(ISMBClient client, List<string> names, out NTStatus status)
         {
             List<SID> output = null;
-            ISMBFileStore namedPipeShare = client.TreeConnect("IPC$", out status);
-            if (namedPipeShare == null)
+            using (RPCCallHelper rpc = new RPCCallHelper(client, LsaRemoteService.ServicePipeName, LsaRemoteService.ServiceInterfaceGuid, LsaRemoteService.ServiceVersion))
             {
-                return null;
-            }
-            object pipeHandle;
-            LsaHandle handle = LsaOpenPolicy(namedPipeShare, (AccessMask)0x801, out pipeHandle, out status);
-            if (handle != null)
-            {
+                status = rpc.BindPipe();
+                if (status != NTStatus.STATUS_SUCCESS)
+                    return null;
 
-                output = LsaLookupNames(namedPipeShare, pipeHandle, handle, names, out status);
+                LsaHandle handle = LsaOpenPolicy(rpc, (AccessMask)0x801, out status);
+                if (handle != null)
+                {
 
-                LsaClose(namedPipeShare, pipeHandle, handle, out status);
+                    output = LsaLookupNames(rpc, handle, names, out status);
+
+                    LsaClose(rpc, handle, out status);
+                }
             }
-            namedPipeShare.Disconnect();
             return output;
         }
 
 
-        public static LsaHandle LsaOpenPolicy(INTFileStore namedPipeShare, AccessMask desiredAccess, out object pipeHandle, out NTStatus status)
+        public static LsaHandle LsaOpenPolicy(RPCCallHelper rpc, AccessMask desiredAccess, out NTStatus status)
         {
-            status = RPCClientHelper.Bind(namedPipeShare, LsaRemoteService.ServicePipeName, LsaRemoteService.ServiceInterfaceGuid, LsaRemoteService.ServiceVersion, out pipeHandle);
-            if (status != NTStatus.STATUS_SUCCESS)
-            {
-                namedPipeShare.CloseFile(pipeHandle);
-                return null;
-            }
-
-
             LsarOpenPolicyRequest openPolicyRequest = new LsarOpenPolicyRequest();
             openPolicyRequest.DesiredAccess = desiredAccess;
 
             LsarOpenPolicyResponse openPolicyResponse;
 
-            status = RPCClientHelper.ExecuteCall(namedPipeShare, pipeHandle, (ushort)LsaRemoteServiceOpName.LsarOpenPolicy, openPolicyRequest, out openPolicyResponse);
+            status = rpc.ExecuteCall((ushort)LsaRemoteServiceOpName.LsarOpenPolicy, openPolicyRequest, out openPolicyResponse);
             if (status != NTStatus.STATUS_SUCCESS)
             {
-                namedPipeShare.CloseFile(pipeHandle);
                 return null;
             }
             return openPolicyResponse.PolicyHandle;
         }
 
-        public static void LsaClose(INTFileStore namedPipeShare, object pipeHandle, LsaHandle handle, out NTStatus status)
+        public static void LsaClose(RPCCallHelper rpc, LsaHandle handle, out NTStatus status)
         {
             LsarCloseRequest closeRequest = new LsarCloseRequest();
             closeRequest.handle = handle;
 
             LsarCloseResponse closeResponse;
 
-            status = RPCClientHelper.ExecuteCall(namedPipeShare, pipeHandle, (ushort)LsaRemoteServiceOpName.LsarClose, closeRequest, out closeResponse);
+            status = rpc.ExecuteCall((ushort)LsaRemoteServiceOpName.LsarClose, closeRequest, out closeResponse);
             if (status != NTStatus.STATUS_SUCCESS)
             {
                 return;
@@ -97,7 +89,7 @@ namespace SMBLibrary.Client
 
         }
 
-        public static List<string> LsaLookupSids(INTFileStore namedPipeShare, object pipeHandle, LsaHandle handle, List<SID> sids, out NTStatus status)
+        public static List<string> LsaLookupSids(RPCCallHelper rpc, LsaHandle handle, List<SID> sids, out NTStatus status)
         {
 
             LsarLookupSidsRequest lookupSidsRequest = new LsarLookupSidsRequest();
@@ -110,7 +102,7 @@ namespace SMBLibrary.Client
 
             LsarLookupSidsResponse lookupSidsResponse;
 
-            status = RPCClientHelper.ExecuteCall(namedPipeShare, pipeHandle, (ushort)LsaRemoteServiceOpName.LsarLookupSids, lookupSidsRequest, out lookupSidsResponse);
+            status = rpc.ExecuteCall((ushort)LsaRemoteServiceOpName.LsarLookupSids, lookupSidsRequest, out lookupSidsResponse);
             if (status != NTStatus.STATUS_SUCCESS)
             {
                 return null;
@@ -137,7 +129,7 @@ namespace SMBLibrary.Client
             return output;
         }
 
-        public static List<SID> LsaLookupNames(INTFileStore namedPipeShare, object pipeHandle, LsaHandle handle, List<string> names, out NTStatus status)
+        public static List<SID> LsaLookupNames(RPCCallHelper rpc, LsaHandle handle, List<string> names, out NTStatus status)
         {
             LsarLookupNamesRequest lookupNamesRequest = new LsarLookupNamesRequest();
             lookupNamesRequest.handle = handle;
@@ -150,7 +142,7 @@ namespace SMBLibrary.Client
 
             LsarLookupNamesResponse lookupNamesResponse;
 
-            status = RPCClientHelper.ExecuteCall(namedPipeShare, pipeHandle, (ushort)LsaRemoteServiceOpName.LsarLookupNames, lookupNamesRequest, out lookupNamesResponse);
+            status = rpc.ExecuteCall((ushort)LsaRemoteServiceOpName.LsarLookupNames, lookupNamesRequest, out lookupNamesResponse);
             if (status != NTStatus.STATUS_SUCCESS)
             {
                 return null;
@@ -166,7 +158,7 @@ namespace SMBLibrary.Client
                 if (sid.Use == LsaSIDNameUse.SidTypeUnknown)
                     output.Add(null);
                 else
-                    output.Add(lookupNamesResponse.DomainList.Names[(int)sid.DomainIndex].Sid.ChildSID(sid.RelativeId));
+                    output.Add(sid.GetSID(lookupNamesResponse.DomainList.Names[(int)sid.DomainIndex].Sid));
             }
             return output;
         }

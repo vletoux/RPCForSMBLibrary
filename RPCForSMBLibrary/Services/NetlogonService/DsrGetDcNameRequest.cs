@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SMBLibrary.Client.Helpers;
 using SMBLibrary.RPC;
 using SMBLibrary.Services;
 using Utilities;

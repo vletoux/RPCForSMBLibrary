@@ -30,10 +30,7 @@ namespace SMBLibrary.Services
             parser.ReadEmbeddedStructureFullPointer(ref DomainControllerAddress);
             DomainControllerAddressType = parser.ReadUInt32();
 
-            byte[] gdata = new byte[16];
-
-            parser.ReadBytes(gdata);
-            DomainGuid = new Guid(gdata);
+            DomainGuid = new Guid(parser.ReadBytes(16));
 
             parser.ReadEmbeddedStructureFullPointer(ref DomainName);
             parser.ReadEmbeddedStructureFullPointer(ref DnsForestName);

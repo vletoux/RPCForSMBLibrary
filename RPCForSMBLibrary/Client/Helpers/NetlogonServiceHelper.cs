@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using SMBLibrary.Client.Helpers;
 using SMBLibrary.RPC;
 using SMBLibrary.Services;
 using Utilities;
@@ -16,43 +17,29 @@ namespace SMBLibrary.Client
     {
 
 
-        public static object DsGetDCNames(ISMBClient client, string ServerName, string DomainName, string SiteName, uint Flags, out NTStatus status)
+        public static DomainControllerInfo DsGetDCNames(ISMBClient client, string ServerName, string DomainName, string SiteName, uint Flags, out NTStatus status)
         {
-            object pipeHandle;
-
-            ISMBFileStore namedPipeShare = client.TreeConnect("IPC$", out status);
-            if (namedPipeShare == null)
+            using (RPCCallHelper rpc = new RPCCallHelper(client, NetlogonService.ServicePipeName, NetlogonService.ServiceInterfaceGuid, NetlogonService.ServiceVersion))
             {
-                return null;
+                status = rpc.BindPipe();
+                if (status != NTStatus.STATUS_SUCCESS)
+                    return null;
+
+                DsrGetDcNameRequest getDcNameRequest = new DsrGetDcNameRequest();
+                getDcNameRequest.ServerName = ServerName;
+                getDcNameRequest.DomainName = DomainName;
+                getDcNameRequest.SiteName = SiteName;
+                getDcNameRequest.Flags = Flags;
+
+                DsrGetDcNameResponse getDcNameResponse;
+
+                status = rpc.ExecuteCall((ushort)NetlogonServiceOpName.DsrGetDcName, getDcNameRequest, out getDcNameResponse);
+                if (status != NTStatus.STATUS_SUCCESS)
+                {
+                    return null;
+                }
+                return new DomainControllerInfo(getDcNameResponse.DCInfo);
             }
-            status = RPCClientHelper.Bind(namedPipeShare, NetlogonService.ServicePipeName, NetlogonService.ServiceInterfaceGuid, NetlogonService.ServiceVersion, out pipeHandle);
-            if (status != NTStatus.STATUS_SUCCESS)
-            {
-                namedPipeShare.CloseFile(pipeHandle);
-                namedPipeShare.Disconnect();
-                return null;
-            }
-
-
-            DsrGetDcNameRequest getDcNameRequest = new DsrGetDcNameRequest();
-            getDcNameRequest.ServerName = ServerName;
-            getDcNameRequest.DomainName = DomainName;
-            getDcNameRequest.SiteName = SiteName;
-            getDcNameRequest.Flags = Flags;
-
-            DsrGetDcNameResponse getDcNameResponse;
-
-            status = RPCClientHelper.ExecuteCall(namedPipeShare, pipeHandle, (ushort)NetlogonServiceOpName.DsrGetDcName, getDcNameRequest, out getDcNameResponse);
-            if (status != NTStatus.STATUS_SUCCESS)
-            {
-                namedPipeShare.CloseFile(pipeHandle);
-                namedPipeShare.Disconnect();
-                return null;
-            }
-            namedPipeShare.CloseFile(pipeHandle);
-            namedPipeShare.Disconnect();
-
-            return new DomainControllerInfo(getDcNameResponse.DCInfo);
         }
 
     }

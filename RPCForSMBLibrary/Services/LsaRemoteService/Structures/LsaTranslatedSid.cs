@@ -34,5 +34,15 @@ namespace SMBLibrary.Services
             writer.WriteUInt32(DomainIndex);
             writer.EndStructure();
         }
+
+        public SID GetSID(SID DomainSID)
+        {
+            SID sid = new SID();
+            sid.Revision = DomainSID.Revision;
+            sid.IdentifierAuthority = DomainSID.IdentifierAuthority;
+            sid.SubAuthority = new List<uint>(DomainSID.SubAuthority);
+            sid.SubAuthority.Add(RelativeId);
+            return sid;
+        }
     }
 }
