@@ -29,7 +29,10 @@ namespace SMBLibrary.RPC
         {
             uint subAuthorityCount = parser.ReadUInt32();
             byte[] buffer = parser.ReadBytes((int)(SID.FixedLength + subAuthorityCount * 4));
-            sid = new SID(buffer, 0);
+            var tempSid = new SID(buffer, 0);
+            sid.Revision = tempSid.Revision;
+            sid.IdentifierAuthority = tempSid.IdentifierAuthority;
+            sid.SubAuthority = tempSid.SubAuthority;
         }
 
         public void Write(NDRWriter writer)

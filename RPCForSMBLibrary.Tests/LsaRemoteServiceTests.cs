@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SMBLibrary.Client.Helpers;
 using SMBLibrary.RPC;
 using SMBLibrary.Services;
 using Utilities;
@@ -35,7 +36,7 @@ namespace SMBLibrary.Tests
             Assert.IsTrue(response.Count == 1);
             Assert.IsTrue(response.DomainList.Entries == 1);
             Assert.IsTrue(response.DomainList.Names[0].Name == "TEST");
-            Assert.IsTrue(response.DomainList.Names[0].Sid.ToString() == "S-1-5-21-4005144719-3948538632-2546531719");
+            Assert.IsTrue(SIDHelper.ToString(response.DomainList.Names[0].Sid) == "S-1-5-21-4005144719-3948538632-2546531719");
             Assert.IsTrue(response.TranslatedSids.Items.Count == 1);
             Assert.IsTrue(response.TranslatedSids.Items[0].DomainIndex == 0);
             Assert.IsTrue(response.TranslatedSids.Items[0].Name == "Adiant");
@@ -59,7 +60,7 @@ namespace SMBLibrary.Tests
             Assert.IsTrue(response.Count == 1);
             Assert.IsTrue(response.DomainList.Entries == 1);
             Assert.IsTrue(response.DomainList.Names[0].Name == "TEST");
-            Assert.IsTrue(response.DomainList.Names[0].Sid.ToString() == "S-1-5-21-4005144719-3948538632-2546531719");
+            Assert.IsTrue(SIDHelper.ToString(response.DomainList.Names[0].Sid) == "S-1-5-21-4005144719-3948538632-2546531719");
             Assert.IsTrue(response.TranslatedNames.Items.Count == 1);
             Assert.IsTrue(response.TranslatedNames.Items[0].DomainIndex == 0);
             Assert.IsTrue(response.TranslatedNames.Items[0].RelativeId == 1000);
@@ -73,7 +74,7 @@ namespace SMBLibrary.Tests
 
             SID sid = new SID(buffer, 0);
 
-            Assert.IsTrue(string.Equals(sid.ToString(),"S-1-5-21-4005144719-3948538632-2546531719", StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(string.Equals(SIDHelper.ToString(sid),"S-1-5-21-4005144719-3948538632-2546531719", StringComparison.OrdinalIgnoreCase));
         }
 
         public void TestAll()
